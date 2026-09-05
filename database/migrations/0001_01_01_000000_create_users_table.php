@@ -13,10 +13,14 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->ulid('ulid')->unique();
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->time('active_hours_start')->default('08:00');
+            $table->time('active_hours_end')->default('22:00');
+            $table->time('quiz_preferred_time')->default('20:00');
             $table->rememberToken();
             $table->timestamps();
         });

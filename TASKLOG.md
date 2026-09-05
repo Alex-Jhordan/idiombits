@@ -14,7 +14,7 @@
     * Run `php artisan install:api` (this command creates `routes/api.php` and publishes the Sanctum migration).
     * Open `app/Models/User.php` and add the import `use Laravel\Sanctum\HasApiTokens;` and include the `HasApiTokens` trait inside the `User` class definition.
 
-- [ ] **Task 1.2: Base Migrations Creation for PostgreSQL**
+- [x] **Task 1.2: Base Migrations Creation for PostgreSQL**
   * Modify default user migration `database/migrations/xxxx_xx_xx_create_users_table.php` adding:
     * `$table->ulid('ulid')->unique()`
     * `$table->time('active_hours_start')->default('08:00')`
@@ -63,12 +63,15 @@
     * Run `php artisan make:enum QuizLogType` with string values: `Ordinary = 'ordinary'`, `Audit = 'audit'`.
     * Run `php artisan make:enum QuizLogInteractionType` with string values: `Cloze = 'cloze'`, `SentenceScramble = 'sentence_scramble'`, `SelfAssessment = 'self_assessment'`.
   * Configure `app/Models/User.php`:
-    * Include trait `Illuminate\Database\Eloquent\Concerns\HasUlids` for automatic `ulid` column generation upon user creation.
+    * Add `#[RouteKey('ulid')]` class attribute for route model binding.
+    * Include trait `Illuminate\Database\Eloquent\Concerns\HasUlids`.
+    * Implement `uniqueIds(): array` method returning `['ulid']` to target the explicit column.
+    * Override `getKeyType(): string` returning `'int'` and `getIncrementing(): bool` returning `true` to preserve `id` primary key behavior.
     * Define explicit mass assignment `$fillable`: `['ulid', 'name', 'email', 'password', 'active_hours_start', 'active_hours_end', 'quiz_preferred_time']`.
     * Define relationship methods returning Eloquent types: `phrases(): HasMany`, `dailyQuizSessions(): HasMany`, and `quizLogs(): HasMany`.
   * Create and configure `app/Models/Phrase.php` (`php artisan make:model Phrase`):
-    * Include trait `Illuminate\Database\Eloquent\Concerns\HasUlids`.
-    * Implement `getRouteKeyName(): string` method returning `'ulid'` for route model binding.
+    * Add `#[RouteKey('ulid')]` class attribute for route model binding.
+    * Implement `booted()` method to automatically generate `ulid` via `Str::ulid()` upon creation if not provided by client (Flutter offline sync).
     * Define explicit mass assignment `$fillable`: `['ulid', 'user_id', 'original_text', 'source_language', 'status', 'tag', 'queue_position', 'success_streak', 'learned_at']`.
     * Cast `status` to `PhraseStatus::class` and `learned_at` to `'datetime'`.
     * Define relationship methods returning Eloquent types: `user(): BelongsTo`, `phrasePayload(): HasOne`, and `quizLogs(): HasMany`.
@@ -77,8 +80,10 @@
     * Cast `'payload_data' => 'array'` to automatically abstract the PostgreSQL JSONB field.
     * Define relationship method: `phrase(): BelongsTo`.
   * Create and configure `app/Models/DailyQuizSession.php` (`php artisan make:model DailyQuizSession`):
+    * Add `#[RouteKey('ulid')]` class attribute for route model binding.
     * Include trait `Illuminate\Database\Eloquent\Concerns\HasUlids`.
-    * Implement `getRouteKeyName(): string` method returning `'ulid'`.
+    * Implement `uniqueIds(): array` method returning `['ulid']`.
+    * Override `getKeyType(): string` returning `'int'` and `getIncrementing(): bool` returning `true` to preserve `id` primary key behavior.
     * Define explicit mass assignment `$fillable`: `['ulid', 'user_id', 'scheduled_for', 'expires_at', 'status']`.
     * Cast `scheduled_for` to `'date'`, `expires_at` to `'datetime'`, and `status` to `DailyQuizSessionStatus::class`.
     * Define relationship methods returning Eloquent types: `user(): BelongsTo` and `quizLogs(): HasMany`.
