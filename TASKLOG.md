@@ -56,7 +56,7 @@
 
 ## Phase 2: Eloquent Models, Enums, and Core Services
 
-- [ ] **Task 2.1: Eloquent Models and PHP Enums in Laravel**
+- [X] **Task 2.1: Eloquent Models and PHP Enums in Laravel**
   * Create Backed Enums in `app/Enums/`:
     * Run `php artisan make:enum PhraseStatus` with string values: `Captured = 'captured'`, `Queued = 'queued'`, `InProgress = 'in_progress'`, `Learned = 'learned'`, `ReLearning = 're_learning'`.
     * Run `php artisan make:enum DailyQuizSessionStatus` with string values: `Pending = 'pending'`, `Completed = 'completed'`, `Expired = 'expired'`.
@@ -66,7 +66,6 @@
     * Add `#[RouteKey('ulid')]` class attribute for route model binding.
     * Include trait `Illuminate\Database\Eloquent\Concerns\HasUlids`.
     * Implement `uniqueIds(): array` method returning `['ulid']` to target the explicit column.
-    * Override `getKeyType(): string` returning `'int'` and `getIncrementing(): bool` returning `true` to preserve `id` primary key behavior.
     * Define explicit mass assignment `$fillable`: `['ulid', 'name', 'email', 'password', 'active_hours_start', 'active_hours_end', 'quiz_preferred_time']`.
     * Define relationship methods returning Eloquent types: `phrases(): HasMany`, `dailyQuizSessions(): HasMany`, and `quizLogs(): HasMany`.
   * Create and configure `app/Models/Phrase.php` (`php artisan make:model Phrase`):
@@ -83,7 +82,6 @@
     * Add `#[RouteKey('ulid')]` class attribute for route model binding.
     * Include trait `Illuminate\Database\Eloquent\Concerns\HasUlids`.
     * Implement `uniqueIds(): array` method returning `['ulid']`.
-    * Override `getKeyType(): string` returning `'int'` and `getIncrementing(): bool` returning `true` to preserve `id` primary key behavior.
     * Define explicit mass assignment `$fillable`: `['ulid', 'user_id', 'scheduled_for', 'expires_at', 'status']`.
     * Cast `scheduled_for` to `'date'`, `expires_at` to `'datetime'`, and `status` to `DailyQuizSessionStatus::class`.
     * Define relationship methods returning Eloquent types: `user(): BelongsTo` and `quizLogs(): HasMany`.
