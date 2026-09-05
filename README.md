@@ -1,58 +1,160 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# IdiomBits — Micro-Learning & Incidental Exposure System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**IdiomBits** is an offline-first micro-learning application engineered to eliminate cognitive friction in language acquisition. Grounded in the concept of **Invisible Design**, IdiomBits transforms language practice into passive, incidental exposure across daily mobile device interactions—powered by Google Gemini AI, native widgets, ambient notifications, and micro-quizzes.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 💡 System Architecture Overview
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+                        +---------------------------------------------+  
+                        |           FLUTTER MOBILE CLIENT             |  
+                        |   (Offline-First / BLoC / Isar / Widgets)   |  
+                        +----------------------+----------------------+  
+                                               |  
+                                     REST API (Bearer Token)  
+                                               |  
+                        +----------------------v----------------------+  
+                        |               LARAVEL BACKEND               |  
+                        |      (Sanctum / Eloquent / Redis Queue)     |  
+                        +----------------------+----------------------+
+                                               |  
+                                        Redis Queue Job  
+                                               |  
+                        +----------------------v----------------------+  
+                        |          GOOGLE GEMINI 2.5 FLASH            |  
+                        |    (Structured JSON Payload Generator)      |  
+                        +---------------------------------------------+  
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## 🛠️ Core Technology Stack
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+| Layer | Framework / Technology | Purpose |
+| :--- | :--- | :--- |
+| **Backend API** | Laravel 13 / PHP 8.3+ | Core RESTful API & Authentication |
+| **Database** | PostgreSQL 16+ | Relational data persistence (JSONB support) |
+| **Queue & Processing** | Redis (`predis`) + Laravel Worker (`queue:work`) | Asynchronous job execution & retry backoff |
+| **AI Enrichment** | Google Gemini API (`gemini-2.5-flash`) | Contextual translation, tenses & phrasing |
+| **Mobile App** | Flutter 3.x (Android & iOS) | Cross-platform client UI & local engine |
+| **State Management** | Flutter BLoC | Deterministic reactive state handling |
+| **Local Database** | Isar Database | High-performance client-side storage |
+| **Token Security** | FlutterSecureStorage | Secure offline storage for Sanctum Bearer tokens |
+| **Background Sync** | WorkManager (`workmanager`) | Connectivity-aware data synchronization |
+| **Passive UI** | home_widget (Android/iOS) | Home screen & Lock screen integration |
+| **Audio Output** | flutter_tts | Native Text-to-Speech playback |
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## Key Features & Highlights
 
-## Agentic Development
+### ⚡ Zero-Friction 2-Tap Capture
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+- **Multimodal Ingestion:** Instant capture via **Text**, **Voice (Speech-to-Text)**, or **Image (OCR with cropping)**.
+- **Automatic Idiomatization:** Single words are automatically converted by AI into natural lexical chunks or collocations.
+- **150-Character Guardrail:** Enforces concise micro-phrases over bulky paragraphs.
+- **Client ULID Generation:** Generates unique identifiers offline before dispatching to backend endpoints.
 
-```bash
-composer require laravel/boost --dev
+### 🎯 The 5-Slot Active Window
 
-php artisan boost:install
+- **Constrained Focus:** Limits active learning strictly to **5 phrases** in `in_progress` status per user to prevent cognitive overload.
+- **FIFO Pipeline:** Automatic ingestion from `queued` inventory whenever an active phrase graduates to `learned`.
+- **Streak Progression:** Requires 2 consecutive correct answers in quizzes (`success_streak = 2`) to graduate a phrase.
+
+### 📱 Passive & Ambient Exposure
+
+- **Interactive Home Screen Widget:** Powered by `home_widget` reading directly from local Isar Database, featuring a 3D flip card toggle between native phrase and AI translation, audio TTS via `flutter_tts`, and phrase navigation without launching the app.
+- **Low-Priority Silent Notifications:** Ambient status-bar updates dispatched within user-defined active hours (`active_hours_start` to `active_hours_end`).
+- **Direct Notification Actions:** Inline buttons for background audio playback and full translation reveals.
+
+### ⏱️ 45-Second Daily Micro-Quizzes
+
+- **3-Question Micro-Sessions:** Dynamic formats including **Cloze tests**, **Sentence scrambles**, and **Self-assessments**.
+- **15-Second Time-Cap:** Enforces rapid recall per question with immediate UI streak feedback.
+- **14-Day Audit Cycle:** Graduated phrases re-enter audit sessions after 14 days (`learned_at <= NOW() - 14 days`) to guarantee long-term retention.
+
+---
+
+## 🗄️ Database Entity-Relationship Diagram (ERD)
+
+```
++-----------+                  +-----------+
+  |   users   | 1 ------------ * |  phrases  | 1 --- 1 +-------------------+
+  +-----+-----+                  +-----+-----+         | phrase_payloads   |
+        |                              |               +-------------------+
+        |                              |
+        | 1                            | 1
+        |                              |
+        v *                            v *
+  +-----+-------------------+    +-----+-----+
+  |  daily_quiz_sessions    |    |           |
+  +-----------+-------------+    |           |
+              | 1                | quiz_logs |
+              |                  |           |
+              v *                |           |
+              +----------------->+-----------+
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+---
 
-## Contributing
+## 🚀 Environment Setup & Installation Guide
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Prerequisites
 
-## Code of Conduct
+- **PHP 8.3+** and **Composer 2.x**
+- **PostgreSQL 16+** & **Redis**
+- **Flutter SDK 3.x** & **Dart SDK**
+- **Google Gemini API Key**
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Backend Setup (Laravel)
 
-## Security Vulnerabilities
+```bash
+# 1. Clone the repository and enter the backend directory 
+cd backend-api 
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# 2. Install PHP dependencies 
+composer install 
 
-## License
+# 3. Environment Configuration 
+cp .env.example .env 
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# Configure PostgreSQL & Redis inside .env: 
+# DB_CONNECTION=pgsql 
+# DB_HOST=127.0.0.1 
+# DB_PORT=5432 
+# DB_DATABASE=idiombits 
+# DB_USERNAME=postgres 
+# DB_PASSWORD=secret 
+# QUEUE_CONNECTION=redis 
+# GEMINI_API_KEY=your_gemini_api_key_here 
+
+# 4. Generate Application Key & Run Migrations 
+php artisan key:generate 
+php artisan migrate 
+
+# 5. Start Laravel Queue Worker 
+php artisan queue:work redis --tries=3 --backoff=5,15,30
+
+### Mobile Setup (Flutter)
+
+# 1. Navigate to the mobile application directory 
+cd idiombits_mobile 
+
+# 2. Fetch dependencies 
+flutter pub get 
+
+# 3. Run Isar code generation 
+flutter pub run build_runner build --delete-conflicting-outputs 
+
+# 4. Launch Application (Emulator or Device) 
+flutter run
+
+## 📡 Core API Specification
+
+| Method | Endpoint                | Description                                    | Auth Required |
+| ------ | ----------------------- | ---------------------------------------------- | ------------- |
+| POST   | /api/v1/register        | Create a new user account                      | ❌            |
+| POST   | /api/v1/login           | Authenticate & retrieve Bearer Token           | ❌            |
+| GET    | /api/v1/phrases/active  | Fetch the 5 active in_progress phrases         | ✅            |
+| POST   | /api/v1/phrases/capture | Ingest new phrase for AI enrichment            | ✅            |
+| GET    | /api/v1/phrases/sync    | Delta synchronization using last_synced_at     | ✅            |
+| POST   | /api/v1/quiz/submit     | Process micro-session answers & update streaks | ✅            |
