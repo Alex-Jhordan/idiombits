@@ -90,20 +90,24 @@
     * Cast `is_success` to `'boolean'`, `quiz_type` to `QuizLogType::class`, and `interaction_type` to `QuizLogInteractionType::class`.
     * Define relationship methods returning Eloquent types: `quizSession(): BelongsTo`, `user(): BelongsTo`, and `phrase(): BelongsTo`.
 
-- [ ] **Task 2.2: Integration Service with Google Gemini API**
+- [x] **Task 2.2: Integration Service with Google Gemini API**
   * Create `app/Services/GeminiService.php` as a domain service class.
+  * Update `config/services.php` to define `gemini` array credentials mapping to env variables with defaults:
+    * `key`: `env('GEMINI_API_KEY')`
+    * `base_url`: `env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta')`
+    * `model`: `env('GEMINI_MODEL', 'gemini-3-flash-preview')`
   * Configure `app/Services/GeminiService.php`:
-    * Define constructor injection or property initialization retrieving API key via `config('services.gemini.key')` (mapped from `GEMINI_API_KEY` in `.env`).
+    * Implement constructor injection for optional `?string $apiKey`, `?string $baseUrl`, and `?string $model`, falling back to `config('services.gemini.*')`.
     * Implement `enrichPhrase(string $text, ?string $tag = null): array` method:
-      * Use `Illuminate\Support\Facades\Http` facade to connect to the Gemini API endpoint `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`.
-      * Attach API key as query parameter or header and configure payload with `generationConfig` specifying `response_mime_type => "application/json"` and strict `response_schema`.
-      * Enforce `response_schema` requiring JSON object structure:
-        * `source_language` (string, ISO code e.g., 'en')
-        * `original_text` (string)
-        * `idiomatic_translation` (string)
-        * `time_variations` (array of objects containing `tense`, `sentence`, and `translation`)
-        * `complementary_phrase` (object containing `phrase` and `translation`)
-      * Handle response using `$response->throw()->json()` to convert HTTP/API errors into catchable exceptions during background job execution.
+      * Validate `$apiKey` and throw `RuntimeException` if empty.
+      * Build request endpoint dynamically: `{$this->baseUrl}/models/{$this->model}:generateContent`.
+      * Send `POST` request using `Illuminate\Support\Facades\Http::acceptJson()->withQueryParameters(['key' => $this->apiKey])`.
+      * Structure request body with `contents.0.parts.0.text` containing prompt string (appending tag context if present).
+      * Include `generationConfig` with `responseMimeType => 'application/json'` and `responseSchema` (using OpenAPI-like schema format with camelCase keys):
+        * Object requiring: `source_language`, `original_text`, `idiomatic_translation`, `time_variations`, `complementary_phrase`.
+        * `time_variations`: ARRAY of OBJECTs requiring `tense`, `sentence`, `translation`.
+        * `complementary_phrase`: OBJECT requiring `phrase`, `translation`.
+      * Process response with `$response->throw()->json()`, parse the candidate text string from `candidates.0.content.parts.0.text`, decode with `json_decode(..., true)`, and validate the JSON output array before returning.
 
 - [ ] **Task 2.3: Asynchronous Job Processing with Redis Worker**
   * Run `php artisan make:job ProcessPhraseWithGemini` to generate `app/Jobs/ProcessPhraseWithGemini.php`.
