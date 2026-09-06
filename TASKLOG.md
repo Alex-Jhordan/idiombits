@@ -125,7 +125,7 @@
 
 ## Phase 3: REST API Endpoints and Scheduler in Laravel
 
-- [ ] **Task 3.1: Sanctum Authentication and API Routes**
+- [x] **Task 3.1: Sanctum Authentication and API Routes**
   * Run `php artisan make:controller Api/V1/AuthController` to generate `app/Http/Controllers/Api/V1/AuthController.php`.
   * Configure `app/Http/Controllers/Api/V1/AuthController.php`:
     * Implement `register(Request $request): JsonResponse` method to validate inputs, create new users, and return user payload with initial Bearer token.
