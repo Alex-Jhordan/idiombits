@@ -109,7 +109,7 @@
         * `complementary_phrase`: OBJECT requiring `phrase`, `translation`.
       * Process response with `$response->throw()->json()`, parse the candidate text string from `candidates.0.content.parts.0.text`, decode with `json_decode(..., true)`, and validate the JSON output array before returning.
 
-- [ ] **Task 2.3: Asynchronous Job Processing with Redis Worker**
+- [x] **Task 2.3: Asynchronous Job Processing with Redis Worker**
   * Run `php artisan make:job ProcessPhraseWithGemini` to generate `app/Jobs/ProcessPhraseWithGemini.php`.
   * Configure `app/Jobs/ProcessPhraseWithGemini.php`:
     * Implement interface `Illuminate\Contracts\Queue\ShouldQueue` and use `Illuminate\Foundation\Queue\Queueable` trait.
