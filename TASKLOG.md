@@ -134,14 +134,14 @@
     * Define public authentication routes (`/v1/register`, `/v1/login`) pointing to `AuthController`.
     * Define protected route group under prefix `v1` using `auth:sanctum` middleware for all application endpoints.
 
-- [ ] **Task 3.2: Controllers and API Resources for Phrases and Quizzes**
+- [x] **Task 3.2: Controllers and API Resources for Phrases and Quizzes**
   * Run `php artisan make:resource Api/V1/PhraseResource` to generate `app/Http/Resources/Api/V1/PhraseResource.php` and configure `toArray(Request $request): array` method to format JSON payload using public ULIDs (`ulid`), attributes, and nested `PhrasePayload` transformation.
   * Run `php artisan make:controller Api/V1/PhraseController` to generate `app/Http/Controllers/Api/V1/PhraseController.php` and implement methods:
-    * `store(Request $request): JsonResponse` (or `: PhraseResource` with 202 status code): Validates input (including client-provided `ulid`), persists new phrase with status `Captured`, dispatches `ProcessPhraseWithGemini::dispatch($phrase)` to Redis queue, and returns `PhraseResource` with HTTP `202 Accepted`.
+    * `store(Request $request): JsonResponse` (or `: PhraseResource` with 202 status code): Validates input, persists new phrase with status `Captured` (relying on model `booted` hook for automatic ULID generation if not provided), dispatches `ProcessPhraseWithGemini::dispatch($phrase)` to Redis queue, and returns `PhraseResource` with HTTP `202 Accepted`.
     * `active(Request $request): AnonymousResourceCollection`: Queries and returns a collection of the 5 active phrases (`InProgress`) for the authenticated user including the `phrasePayload` relationship, wrapped in `PhraseResource::collection()`.
-    * `sync(Request $request): JsonResponse`: Receives unsynced local phrases payload, executes delta database synchronization, and returns updated phrase status mappings.
+    * `sync(Request $request): JsonResponse`: Receives unsynced local phrases payload, executes database synchronization using `updateOrCreate` scoped to the authenticated user, and returns updated phrase status mappings.
   * Run `php artisan make:controller Api/V1/QuizController` to generate `app/Http/Controllers/Api/V1/QuizController.php` and implement method:
-    * `submit(Request $request): JsonResponse`: Processes daily quiz answer payloads inside a database transaction (`DB::transaction`), creates `QuizLog` entries, updates phrase `success_streak`, and manages status transitions (`Learned` graduation or `ReLearning` demotion), returning a structured status response.
+    * `submit(Request $request): JsonResponse`: Processes daily quiz answer payloads wrapped entirely inside an atomic database transaction (`DB::transaction`). Resolves or initializes `DailyQuizSession` via `firstOrCreate` setting `scheduled_for` and `expires_at` dynamically based on the user's `quiz_preferred_time` and `active_hours_end` settings. Validates `phrase_ulid` existence via database rules, creates `QuizLog` entries, updates `success_streak`, handles status transitions (`Learned` when streak >= 3 or `ReLearning` on failure), marks the session as `Completed`, and returns structured execution results.
 
 - [ ] **Task 3.3: Scheduler and Job for Ambient Notifications**
   * Run `php artisan make:job DispatchAmbientNotificationsJob` to generate `app/Jobs/DispatchAmbientNotificationsJob.php`.
