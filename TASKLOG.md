@@ -9,7 +9,6 @@
   * Configure environment variables in `.env` for PostgreSQL and Redis infrastructure:
     * Set database connection: `DB_CONNECTION=pgsql`, `DB_HOST=127.0.0.1`, `DB_PORT=5432`, `DB_DATABASE=idiombits`, `DB_USERNAME=postgres`, `DB_PASSWORD=`.
     * Set queue driver and Redis host: `QUEUE_CONNECTION=redis`, `REDIS_CLIENT=predis`, `REDIS_HOST=127.0.0.1`, `REDIS_PORT=6379`.
-    * Append application domain constants: `MIN_NOTIFICATION_INTERVAL=120`, `MAX_NOTIFICATION_INTERVAL=240`.
   * Install API infrastructure and Sanctum authentication:
     * Run `php artisan install:api` (this command creates `routes/api.php` and publishes the Sanctum migration).
     * Open `app/Models/User.php` and add the import `use Laravel\Sanctum\HasApiTokens;` and include the `HasApiTokens` trait inside the `User` class definition.
@@ -142,18 +141,6 @@
     * `sync(Request $request): JsonResponse`: Receives unsynced local phrases payload, executes database synchronization using `updateOrCreate` scoped to the authenticated user, and returns updated phrase status mappings.
   * Run `php artisan make:controller Api/V1/QuizController` to generate `app/Http/Controllers/Api/V1/QuizController.php` and implement method:
     * `submit(Request $request): JsonResponse`: Processes daily quiz answer payloads wrapped entirely inside an atomic database transaction (`DB::transaction`). Resolves or initializes `DailyQuizSession` via `firstOrCreate` setting `scheduled_for` and `expires_at` dynamically based on the user's `quiz_preferred_time` and `active_hours_end` settings. Validates `phrase_ulid` existence via database rules, creates `QuizLog` entries, updates `success_streak`, handles status transitions (`Learned` when streak >= 3 or `ReLearning` on failure), marks the session as `Completed`, and returns structured execution results.
-
-- [ ] **Task 3.3: Scheduler and Job for Ambient Notifications**
-  * Run `php artisan make:job DispatchAmbientNotificationsJob` to generate `app/Jobs/DispatchAmbientNotificationsJob.php`.
-  * Configure `app/Jobs/DispatchAmbientNotificationsJob.php`:
-    * Implement interface `Illuminate\Contracts\Queue\ShouldQueue` and use `Illuminate\Foundation\Queue\Queueable` trait.
-    * Implement `handle(): void` method:
-      * Query active users whose current local time falls within their configured window `[active_hours_start, active_hours_end]`.
-      * Apply dynamic cooldown algorithm ensuring elapsed time since the last notification is `>= MIN_NOTIFICATION_INTERVAL` and `<= MAX_NOTIFICATION_INTERVAL`.
-      * Dispatch push notification payload (via FCM/APNs integration) for eligible users.
-  * Configure Scheduler in `routes/console.php`:
-    * Import `Illuminate\Support\Facades\Schedule` and `App\Jobs\DispatchAmbientNotificationsJob`.
-    * Register job execution: `Schedule::job(new DispatchAmbientNotificationsJob)->everyFifteenMinutes();`
 
 ---
 
